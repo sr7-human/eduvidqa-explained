@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduVidQA — Paper Explained Interactively</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+/* ===== CSS RESET & VARIABLES ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0e1a; --bg2: #111827; --bg3: #1e293b;
+  --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+  --accent: #6366f1; --accent2: #818cf8; --accent-glow: rgba(99,102,241,0.3);
+  --green: #10b981; --amber: #f59e0b; --rose: #f43f5e; --cyan: #06b6d4;
+  --violet: #8b5cf6; --orange: #f97316; --emerald: #34d399; --blue: #3b82f6;
+  --radius: 16px; --shadow: 0 4px 30px rgba(0,0,0,0.4);
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.7;
+  overflow-x: hidden;
+}
+a { color: var(--accent2); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+
+/* ===== NAV ===== */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(10,14,26,0.85); backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(99,102,241,0.2);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem; height: 60px;
+}
+.nav-logo { font-weight: 800; font-size: 1.2rem; color: var(--accent2); }
+.nav-links { display: flex; gap: 1.5rem; list-style: none; }
+.nav-links a {
+  color: var(--text2); font-size: 0.85rem; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--accent2); text-decoration: none; }
+.mobile-nav { display: none; }
+
+/* ===== LAYOUT ===== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+section { padding: 5rem 0; }
+.section-label {
+  text-transform: uppercase; font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 3px; color: var(--accent); margin-bottom: 0.5rem;
+}
+.section-title {
+  font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--accent2), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.section-subtitle { color: var(--text2); font-size: 1.1rem; max-width: 700px; margin-bottom: 2.5rem; }
+
+/* ===== HERO ===== */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  position: relative; overflow: hidden; padding-top: 60px;
+}
+.hero::before {
+  content: ''; position: absolute; top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at 30% 40%, rgba(99,102,241,0.08) 0%, transparent 50%),
+              radial-gradient(circle at 70% 60%, rgba(6,182,212,0.06) 0%, transparent 50%);
+  animation: heroGlow 8s ease-in-out infinite alternate;
+}
+@keyframes heroGlow {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(-2%, 2%) rotate(3deg); }
+}
+.hero-content { position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-block; padding: 0.4rem 1.2rem; border-radius: 50px;
+  background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+  font-size: 0.8rem; font-weight: 600; color: var(--accent2);
+  margin-bottom: 1.5rem;
+}
+.hero h1 {
+  font-size: 3.8rem; font-weight: 900; line-height: 1.1; margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #fff 0%, var(--accent2) 50%, var(--cyan) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p { font-size: 1.2rem; color: var(--text2); max-width: 700px; margin: 0 auto 2rem; }
+.hero-meta {
+  display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
+  color: var(--text3); font-size: 0.85rem;
+}
+.hero-meta span { display: flex; align-items: center; gap: 0.4rem; }
+.scroll-hint {
+  position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+  animation: bounce 2s infinite; color: var(--text3); font-size: 0.8rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+}
+@keyframes bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+
+/* ===== STAT CARDS ===== */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+.stat-card {
+  background: var(--bg2); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius); padding: 1.5rem; text-align: center;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.stat-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 0 30px var(--accent-glow); }
+.stat-card .number {
+  font-size: 2.5rem; font-weight: 900;
+  background: linear-gradient(135deg, var(--accent2), var(--cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.stat-card .label { font-size: 0.85rem; color: var(--text2); margin-top: 0.3rem; }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--bg2); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem;
+  transition: all 0.3s;
+}
+.card:hover { border-color: rgba(99,102,241,0.3); }
+.card h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.8rem; }
+.card p { color: var(--text2); }
+
+/* ===== PIPELINE ===== */
+.pipeline {
+  display: flex; flex-direction: column; gap: 0; position: relative;
+  padding-left: 2rem;
+}
+.pipeline::before {
+  content: ''; position: absolute; left: 15px; top: 0; bottom: 0;
+  width: 3px; background: linear-gradient(to bottom, var(--accent), var(--cyan), var(--green));
+  border-radius: 3px;
+}
+.pipeline-step {
+  position: relative; padding: 1.2rem 0 1.2rem 2rem;
+  opacity: 0; transform: translateX(-20px);
+  animation: slideIn 0.5s ease forwards;
+}
+.pipeline-step:nth-child(1) { animation-delay: 0.1s; }
+.pipeline-step:nth-child(2) { animation-delay: 0.2s; }
+.pipeline-step:nth-child(3) { animation-delay: 0.3s; }
+.pipeline-step:nth-child(4) { animation-delay: 0.4s; }
+.pipeline-step:nth-child(5) { animation-delay: 0.5s; }
+.pipeline-step:nth-child(6) { animation-delay: 0.6s; }
+.pipeline-step:nth-child(7) { animation-delay: 0.7s; }
+@keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+.pipeline-step::before {
+  content: ''; position: absolute; left: -2rem; top: 1.5rem;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 3px solid var(--bg);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.pipeline-step .step-num {
+  font-size: 0.7rem; font-weight: 700; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.2rem;
+}
+.pipeline-step .step-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.3rem; }
+.pipeline-step .step-desc { color: var(--text2); font-size: 0.9rem; }
+.pipeline-step .step-count {
+  display: inline-block; background: rgba(99,102,241,0.15);
+  padding: 0.15rem 0.6rem; border-radius: 50px; font-size: 0.75rem;
+  color: var(--accent2); font-weight: 600; margin-top: 0.3rem;
+}
+
+/* ===== TABS ===== */
+.tabs-container { margin: 2rem 0; }
+.tab-buttons {
+  display: flex; gap: 0.5rem; margin-bottom: 2rem;
+  overflow-x: auto; padding-bottom: 0.5rem; flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 0.7rem 1.5rem; border-radius: 50px;
+  background: var(--bg2); border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text2); font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: all 0.3s; white-space: nowrap;
+}
+.tab-btn:hover { border-color: var(--accent); color: var(--text); }
+.tab-btn.active {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff; box-shadow: 0 0 20px var(--accent-glow);
+}
+.tab-content { display: none; animation: fadeIn 0.4s ease; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===== AXIS VISUALIZER ===== */
+.axis-visual {
+  background: var(--bg3); border-radius: var(--radius); padding: 2rem;
+  margin: 1.5rem 0; position: relative;
+}
+.axis-spectrum {
+  display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0;
+}
+.axis-endpoint {
+  flex-shrink: 0; padding: 0.6rem 1rem; border-radius: 10px;
+  font-size: 0.8rem; font-weight: 700; text-align: center;
+  min-width: 140px;
+}
+.axis-endpoint.left { background: rgba(99,102,241,0.15); color: var(--accent2); border: 1px solid rgba(99,102,241,0.3); }
+.axis-endpoint.right { background: rgba(6,182,212,0.15); color: var(--cyan); border: 1px solid rgba(6,182,212,0.3); }
+.axis-line {
+  flex-grow: 1; height: 6px; border-radius: 3px;
+  background: linear-gradient(to right, var(--accent), var(--cyan));
+  position: relative;
+}
+.axis-line .marker {
+  position: absolute; top: -8px; width: 22px; height: 22px;
+  border-radius: 50%; background: #fff; border: 3px solid var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+  transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+.axis-line .marker::after {
+  content: attr(data-label); position: absolute; bottom: -22px;
+  left: 50%; transform: translateX(-50%); font-size: 0.65rem;
+  white-space: nowrap; color: var(--text3); font-weight: 600;
+}
+
+/* ===== JARGON TOOLTIP ===== */
+.jargon {
+  color: var(--amber); font-weight: 600; cursor: help;
+  border-bottom: 1px dashed var(--amber); position: relative;
+}
+.jargon:hover::after {
+  content: attr(data-meaning); position: absolute; bottom: 100%;
+  left: 50%; transform: translateX(-50%); padding: 0.7rem 1rem;
+  background: var(--bg3); border: 1px solid var(--amber);
+  border-radius: 10px; font-size: 0.8rem; color: var(--text);
+  font-weight: 400; white-space: normal; width: 280px;
+  z-index: 100; box-shadow: var(--shadow); pointer-events: none;
+}
+
+/* ===== COMPARISON TABLE ===== */
+.comp-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  border-radius: var(--radius); overflow: hidden; margin: 1.5rem 0;
+}
+.comp-table thead th {
+  background: var(--bg3); padding: 1rem; text-align: left;
+  font-size: 0.8rem; font-weight: 700; color: var(--accent2);
+  text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 2px solid var(--accent);
+}
+.comp-table tbody td {
+  padding: 0.8rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.85rem; color: var(--text2);
+}
+.comp-table tbody tr { transition: background 0.2s; }
+.comp-table tbody tr:hover { background: rgba(99,102,241,0.05); }
+.comp-table .highlight { color: var(--green); font-weight: 700; }
+.comp-table .warn { color: var(--rose); font-weight: 600; }
+.comp-table .tag {
+  display: inline-block; padding: 0.15rem 0.5rem; border-radius: 50px;
+  font-size: 0.7rem; font-weight: 700;
+}
+.tag-open { background: rgba(16,185,129,0.15); color: var(--green); }
+.tag-closed { background: rgba(244,63,94,0.15); color: var(--rose); }
+.tag-new { background: rgba(6,182,212,0.15); color: var(--cyan); }
+
+/* ===== CHART CONTAINER ===== */
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0; }
+.chart-box {
+  background: var(--bg2); border-radius: var(--radius); padding: 1.5rem;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.chart-box h4 { font-size: 0.9rem; color: var(--text2); margin-bottom: 1rem; text-align: center; }
+
+/* ===== IMPROVEMENT CARDS ===== */
+.improve-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem; }
+.improve-card {
+  background: var(--bg2); border-radius: var(--radius); padding: 1.8rem;
+  border: 1px solid rgba(255,255,255,0.06); transition: all 0.3s;
+  position: relative; overflow: hidden;
+}
+.improve-card:hover { border-color: var(--green); transform: translateY(-3px); box-shadow: 0 0 30px rgba(16,185,129,0.15); }
+.improve-card .old-tag { color: var(--rose); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.improve-card .new-tag { color: var(--green); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 1rem; }
+.improve-card .arrow {
+  display: block; text-align: center; font-size: 1.5rem; color: var(--accent2); margin: 0.5rem 0;
+}
+.improve-card h4 { font-size: 1rem; margin: 0.3rem 0; }
+.improve-card p { font-size: 0.85rem; color: var(--text2); }
+
+/* ===== GLOSSARY ===== */
+.glossary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
+.glossary-item {
+  background: var(--bg2); border-radius: 12px; padding: 1.2rem 1.5rem;
+  border-left: 3px solid var(--accent);
+  transition: all 0.2s;
+}
+.glossary-item:hover { border-left-color: var(--cyan); }
+.glossary-item .term { font-weight: 700; color: var(--accent2); font-size: 0.95rem; }
+.glossary-item .def { color: var(--text2); font-size: 0.85rem; margin-top: 0.3rem; }
+
+/* ===== FOOTER ===== */
+.footer {
+  background: var(--bg2); border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 3rem 0; text-align: center; color: var(--text3); font-size: 0.85rem;
+}
+
+/* ===== ANIMATE ON SCROLL ===== */
+.animate-on-scroll { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
+.animate-on-scroll.visible { opacity: 1; transform: translateY(0); }
+
+/* ===== RESPONSIVE — TABLET ===== */
+@media (max-width: 768px) {
+  .hero h1 { font-size: 2.2rem; }
+  .section-title { font-size: 1.8rem; }
+  .chart-row { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  .tab-buttons { gap: 0.3rem; }
+  .tab-btn { padding: 0.5rem 1rem; font-size: 0.75rem; }
+  .axis-spectrum { flex-direction: column; }
+  .axis-endpoint { min-width: auto; width: 100%; }
+  .ortho-grid { grid-template-columns: 1fr; }
+  .improve-grid { grid-template-columns: 1fr; }
+  .glossary-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== RESPONSIVE — MOBILE (Pixel 10 ~412px) ===== */
+@media (max-width: 480px) {
+  /* Layout */
+  .container { padding: 0 1rem; }
+  section { padding: 3rem 0; }
+
+  /* Nav */
+  .nav { padding: 0 1rem; height: 50px; }
+  .nav-logo { font-size: 1rem; }
+  .nav-links { display: none; }
+
+  /* Mobile bottom nav */
+  .mobile-nav {
+    display: flex !important;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(10,14,26,0.95); backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(99,102,241,0.2);
+    justify-content: space-around; padding: 0.5rem 0;
+  }
+  .mobile-nav a {
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--text3); font-size: 0.6rem; font-weight: 600;
+    text-decoration: none; padding: 0.3rem 0.2rem; gap: 0.15rem;
+  }
+  .mobile-nav a .nav-icon { font-size: 1.1rem; }
+  .mobile-nav a.active { color: var(--accent2); }
+  body { padding-bottom: 60px; }
+
+  /* Hero */
+  .hero { min-height: auto; padding: 80px 1rem 3rem; }
+  .hero h1 { font-size: 2rem; line-height: 1.15; }
+  .hero p { font-size: 0.95rem; }
+  .hero-badge { font-size: 0.65rem; padding: 0.3rem 0.8rem; }
+  .hero-meta { flex-direction: column; gap: 0.5rem; font-size: 0.75rem; }
+  .scroll-hint { display: none; }
+
+  /* Section headings */
+  .section-label { font-size: 0.65rem; letter-spacing: 2px; }
+  .section-title { font-size: 1.5rem; }
+  .section-subtitle { font-size: 0.95rem; }
+
+  /* Stat cards */
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+  .stat-card { padding: 1rem; }
+  .stat-card .number { font-size: 1.8rem; }
+  .stat-card .label { font-size: 0.75rem; }
+
+  /* Cards */
+  .card { padding: 1.2rem; }
+  .card h3 { font-size: 1.1rem; }
+  .card p { font-size: 0.85rem; }
+
+  /* Charts */
+  .chart-row { grid-template-columns: 1fr; gap: 1rem; }
+  .chart-box { padding: 1rem; }
+  .chart-box h4 { font-size: 0.8rem; }
+
+  /* Tables — horizontal scroll */
+  .comp-table { font-size: 0.75rem; display: block; overflow-x: auto; white-space: nowrap; }
+  .comp-table thead th { padding: 0.6rem; font-size: 0.7rem; }
+  .comp-table tbody td { padding: 0.5rem 0.6rem; font-size: 0.75rem; }
+
+  /* Tabs */
+  .tab-buttons { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 0.4rem; padding-bottom: 0.5rem; }
+  .tab-btn { padding: 0.5rem 0.8rem; font-size: 0.7rem; flex-shrink: 0; }
+
+  /* Axis visual */
+  .axis-visual { padding: 1.2rem; }
+  .axis-spectrum { flex-direction: column; gap: 0.8rem; }
+  .axis-endpoint { min-width: auto; width: 100%; font-size: 0.75rem; padding: 0.5rem 0.8rem; text-align: center; }
+  .axis-line { height: 8px; min-height: 8px; order: 0; }
+  .axis-line .marker { width: 18px; height: 18px; top: -5px; }
+  .axis-line .marker::after { font-size: 0.55rem; }
+
+  /* Pipeline */
+  .pipeline { padding-left: 1.5rem; }
+  .pipeline-step { padding: 0.8rem 0 0.8rem 1.5rem; }
+  .pipeline-step .step-title { font-size: 0.9rem; }
+  .pipeline-step .step-desc { font-size: 0.8rem; }
+  .pipeline-step::before { left: -1.5rem; width: 12px; height: 12px; }
+  .pipeline::before { left: 9px; }
+
+  /* Ortho grid */
+  .ortho-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+  .ortho-test { padding: 1rem; }
+  .ortho-test .pair { font-size: 0.8rem; }
+  .ortho-test .result { font-size: 0.8rem; }
+
+  /* Improvement cards */
+  .improve-grid { grid-template-columns: 1fr; }
+  .improve-card { padding: 1.2rem; }
+  .improve-card h4 { font-size: 0.9rem; }
+  .improve-card p { font-size: 0.8rem; }
+  .improve-card .arrow { font-size: 1.2rem; margin: 0.3rem 0; }
+
+  /* Glossary */
+  .glossary-grid { grid-template-columns: 1fr; gap: 0.7rem; }
+  .glossary-item { padding: 1rem 1.2rem; }
+  .glossary-item .term { font-size: 0.85rem; }
+  .glossary-item .def { font-size: 0.8rem; }
+
+  /* Trap card */
+  .trap-card { padding: 1.2rem; }
+  .trap-card .trap-stmt { font-size: 0.85rem; }
+  .trap-card .trap-analysis { font-size: 0.8rem; }
+
+  /* Jargon tooltips — tap instead of hover on mobile */
+  .jargon:hover::after { width: 220px; font-size: 0.75rem; left: 0; transform: none; }
+
+  /* Question / Why boxes */
+  .question-box { padding: 1rem 1.2rem; font-size: 0.9rem; }
+  .why-box { padding: 0.8rem 1rem; font-size: 0.8rem; }
+
+  /* Footer */
+  .footer { padding: 2rem 0; font-size: 0.75rem; }
+}
+
+/* ===== QUESTION BOX ===== */
+.question-box {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(6,182,212,0.08));
+  border: 1px solid rgba(99,102,241,0.2); border-radius: var(--radius);
+  padding: 1.5rem 2rem; margin: 1.5rem 0; font-style: italic; color: var(--text);
+}
+.question-box::before { content: '🤔 '; font-style: normal; }
+
+/* ===== WHY BOX ===== */
+.why-box {
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 12px; padding: 1rem 1.5rem; margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.why-box::before { content: '💡 Why this matters: '; font-weight: 700; color: var(--amber); font-style: normal; }
+
+/* ===== ORTHO TEST ===== */
+.ortho-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+.ortho-test {
+  background: var(--bg3); border-radius: 12px; padding: 1.2rem;
+  border: 1px solid rgba(16,185,129,0.2);
+}
+.ortho-test .pair { font-weight: 700; color: var(--green); font-size: 0.85rem; margin-bottom: 0.3rem; }
+.ortho-test .result { color: var(--text2); font-size: 0.85rem; }
+.ortho-test .verdict {
+  display: inline-block; margin-top: 0.5rem; padding: 0.15rem 0.6rem;
+  background: rgba(16,185,129,0.15); color: var(--green); border-radius: 50px;
+  font-size: 0.7rem; font-weight: 700;
+}
+
+/* ===== TRAP CARD ===== */
+.trap-card {
+  background: rgba(244,63,94,0.05); border: 1px solid rgba(244,63,94,0.2);
+  border-radius: var(--radius); padding: 1.5rem; margin: 1rem 0;
+}
+.trap-card .trap-stmt { font-weight: 600; color: var(--rose); margin-bottom: 0.8rem; }
+.trap-card .trap-analysis { color: var(--text2); font-size: 0.9rem; }
+.trap-card .maintained { color: var(--green); }
+.trap-card .swapped { color: var(--rose); }
+</style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION ===== -->
+<nav class="nav">
+  <div class="nav-logo">📚 EduVidQA Explained</div>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#dataset">Dataset</a></li>
+    <li><a href="#axes">4 Axes</a></li>
+    <li><a href="#models">Models</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#improvements">What's Next</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ul>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">EMNLP 2025 · Main Conference · Long Paper</div>
+    <h1>EduVidQA</h1>
+    <p>Can AI answer your questions about lecture videos — like a real teaching assistant? This paper builds the first dataset and benchmark to find out.</p>
+    <p style="font-size: 0.95rem; color: var(--text3); max-width: 600px; margin: 0 auto 1.5rem;">
+      We break down every concept, every technical term, every result — so anyone can understand this research, even without an ML background.
+    </p>
+    <div class="hero-meta">
+      <span>👨‍🔬 Sourjyadip Ray, Shubham Sharma, Somak Aditya, Pawan Goyal</span>
+      <span>🏛️ IIT Kharagpur & Panjab University</span>
+      <span>📅 EMNLP 2025</span>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll to explore</span>
+    <span>↓</span>
+  </div>
+</section>
+
+<!-- ===== PROBLEM SECTION ===== -->
+<section id="problem" style="background: var(--bg2);">
+  <div class="container">
+    <div class="animate-on-scroll">
+      <div class="section-label">The Problem</div>
+      <div class="section-title">YouTube Lectures Have Zero Interaction</div>
+      <div class="section-subtitle">
+        You're watching a 67-minute CS lecture. You don't understand something. What do you do? Post a comment? <strong>Nope.</strong> Almost nobody does. Here's what 52 real students told the researchers:
+      </div>
+    </div>
+
+    <div class="stats-grid animate-on-scroll">
+      <div class="stat-card">
+        <div class="number" id="stat1">0</div>
+        <div class="label">students want to ask questions while watching</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="stat2">0</div>
+        <div class="label">actually post questions in comments</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="stat3">0</div>
+        <div class="label">say "I'll just search elsewhere"</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="stat4">0</div>
+        <div class="label">never ask because "nobody answers anyway"</div>
+      </div>
+    </div>
+
+    <div class="card animate-on-scroll">
+      <h3>🎯 The Core Idea</h3>
+      <p>What if an AI could watch the lecture video with you — see the slides, read the transcript — and answer your questions <em>instantly</em>, like a real teaching assistant?</p>
+      <br>
+      <p>That's exactly what this paper explores. They built a dataset of 5,252 question-answer pairs from CS lecture videos and tested 6 different AI models to see how well they can play the role of a TA.</p>
+    </div>
+
+    <div class="chart-row animate-on-scroll">
+      <div class="chart-box">
+        <h4>📊 How Often Students Use YouTube Lectures</h4>
+        <canvas id="chartUsage"></canvas>
+      </div>
+      <div class="chart-box">
+        <h4>📊 Why Students DON'T Ask Questions</h4>
+        <canvas id="chartReasons"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DATASET SECTION ===== -->
+<section id="dataset">
+  <div class="container">
+    <div class="animate-on-scroll">
+      <div class="section-label">The Dataset</div>
+      <div class="section-title">How They Built EduVidQA</div>
+      <div class="section-subtitle">
+        Two data sources: <strong>270 real questions</strong> from YouTube comments (expert-verified) + <strong>4,982 synthetic questions</strong> generated by GPT-4o from NPTEL transcripts.
+      </div>
+    </div>
+
+    <div class="stats-grid animate-on-scroll">
+      <div class="stat-card">
+        <div class="number">5,252</div>
+        <div class="label">Total QA Pairs</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">296</div>
+        <div class="label">Lecture Videos</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">67 min</div>
+        <div class="label">Avg. Real Video Length</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">7</div>
+        <div class="label">CS Courses Covered</div>
+      </div>
+    </div>
+
+    <div class="card animate-on-scroll">
+      <h3>🔬 Real-World Data Pipeline (270 QA pairs)</h3>
+      <p style="color: var(--text2); margin-bottom: 1rem;">How they extracted genuine student questions from YouTube:</p>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-num">Step 1</div>
+          <div class="step-title">Scrape YouTube Comments</div>
+          <div class="step-desc">Used python-youtube library to pull 100 comments per video from 145 CS lecture videos.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 2</div>
+          <div class="step-title">Regex Filter — Find Questions</div>
+          <div class="step-desc">Simple filter: does the comment contain a "?"? Found <strong>1,440</strong> question-like comments.</div>
+          <div class="step-count">1,440 questions</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 3</div>
+          <div class="step-title">Manual Filter — Remove Junk</div>
+          <div class="step-desc">Humans removed rhetorical, off-topic, and meta questions (like "Can you make more videos?"). Left with <strong>702</strong> genuine knowledge-seeking questions.</div>
+          <div class="step-count">702 questions</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 4</div>
+          <div class="step-title">Timestamp Requirement</div>
+          <div class="step-desc">Kept only questions with a timestamp reference (e.g., "At 15:30, why is..."). This links the question to a specific moment in the video.</div>
+          <div class="step-count">270 questions</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 5</div>
+          <div class="step-title">Expert Verification</div>
+          <div class="step-desc">Domain experts (grad students with research + TA experience) wrote, corrected, and verified every answer. No LLMs allowed — pure human expertise.</div>
+          <div class="step-count">270 verified QA pairs ✅</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card animate-on-scroll">
+      <h3>🤖 Synthetic Data Pipeline (4,982 QA pairs)</h3>
+      <p style="color: var(--text2); margin-bottom: 1rem;">Since manually creating QA pairs is expensive, they used GPT-4o to generate synthetic data from NPTEL lecture transcripts:</p>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-num">Step 1</div>
+          <div class="step-title">GPT-4o Generates QA Pairs</div>
+          <div class="step-desc">Fed NPTEL lecture PDFs (transcripts + slides + timestamps) to GPT-4o. Generated questions that mimic real student curiosity.</div>
+          <div class="step-count">7,530 generated</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 2</div>
+          <div class="step-title">Remove Timestamp-less Questions</div>
+          <div class="step-desc">Discarded questions without timestamp references (need to link to a video moment).</div>
+          <div class="step-count">6,546 remaining</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 3</div>
+          <div class="step-title">Adversarial Refinement</div>
+          <div class="step-desc">The killer step: removed questions that could be answered <em>without watching the video</em>. If GPT-4o can answer correctly without context (entailment score ≥ 0.65), the question is too easy — remove it.</div>
+          <div class="step-count">4,982 surviving</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 4</div>
+          <div class="step-title">Bloom's Taxonomy Tagging</div>
+          <div class="step-desc">Tagged each question by difficulty: Easy (Knowledge, Comprehension), Medium (Application, Analysis), Hard (Synthesis, Evaluation).</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 5</div>
+          <div class="step-title">Train/Test Split</div>
+          <div class="step-desc">78% train (3,908 pairs) + 22% test (1,074 pairs).</div>
+          <div class="step-count">Ready for training ✅</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row animate-on-scroll">
+      <div class="chart-box">
+        <h4>📊 Real vs Synthetic: Length Comparison</h4>
+        <canvas id="chartLengths"></canvas>
+      </div>
+      <div class="chart-box">
+        <h4>📊 How EduVidQA Compares to Other Datasets</h4>
+        <canvas id="chartDatasets"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 4 ORTHOGONAL AXES ===== -->
+<section id="axes" style="background: var(--bg2);">
+  <div class="container">
+    <div class="animate-on-scroll">
+      <div class="section-label">Orthogonal Framework</div>
+      <div class="section-title">4 Independent Axes of EduVidQA</div>
+      <div class="section-subtitle">
+        We decompose this paper into 4 <span class="jargon" data-meaning="Independent dimensions — changing one axis doesn't affect the other. Like how moving left/right doesn't change your height.">orthogonal axes</span> — independent dimensions that capture the full design space. Think of it like describing a point in 4D space: you need all 4 coordinates.
+      </div>
+    </div>
+
+    <div class="question-box animate-on-scroll">
+      What does "orthogonal" mean here? Think of a map: you can move North/South independently of moving East/West. Similarly, you can change the <em>data origin</em> without affecting the <em>cognitive demand</em> — they're independent "directions" in the paper's design space.
+    </div>
+
+    <div class="tabs-container animate-on-scroll">
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('axis1', this)">🧬 Axis 1: Data Origin</button>
+        <button class="tab-btn" onclick="switchTab('axis2', this)">🧠 Axis 2: Cognitive Demand</button>
+        <button class="tab-btn" onclick="switchTab('axis3', this)">📏 Axis 3: Answer Quality</button>
+        <button class="tab-btn" onclick="switchTab('axis4', this)">👁️ Axis 4: Context Modality</button>
+        <button class="tab-btn" onclick="switchTab('orthotest', this)">✅ Orthogonality Proof</button>
+        <button class="tab-btn" onclick="switchTab('traps', this)">⚠️ Coordinate Swap Traps</button>
+      </div>
+
+      <!-- AXIS 1: DATA ORIGIN -->
+      <div id="axis1" class="tab-content active">
+        <div class="card">
+          <h3>🧬 Axis 1: Data Origin — "Where do the QA pairs come from?"</h3>
+          <div class="axis-visual">
+            <div class="axis-spectrum">
+              <div class="axis-endpoint left">🧑‍🎓 Fully Human-Curated</div>
+              <div class="axis-line">
+                <div class="marker" style="left: 5%;" data-label="270 Real"></div>
+                <div class="marker" style="left: 90%;" data-label="4982 Synthetic" id="marker-synth"></div>
+              </div>
+              <div class="axis-endpoint right">🤖 Fully Machine-Generated</div>
+            </div>
+          </div>
+
+          <h4 style="margin: 1.5rem 0 0.5rem;">At the Human End (270 QA pairs):</h4>
+          <p style="color: var(--text2);">Real student questions scraped from YouTube comments. Each one manually verified by domain experts (grad students with research + TA experience). Answers written by humans, no AI allowed. These are the <em>ground truth</em> — the gold standard.</p>
+
+          <h4 style="margin: 1.5rem 0 0.5rem;">At the Machine End (4,982 QA pairs):</h4>
+          <p style="color: var(--text2);">
+            Generated by <span class="jargon" data-meaning="OpenAI's flagship multimodal AI model (2024). Understands text + images. Used here to generate synthetic training data.">GPT-4o</span> from
+            <span class="jargon" data-meaning="National Programme on Technology Enhanced Learning — free online courses from IITs/IIScs in India. Has high-quality lecture transcripts with timestamps and key frames.">NPTEL</span>
+            lecture transcripts. Then filtered through adversarial refinement to ensure quality.
+          </p>
+
+          <div class="why-box" style="margin-top: 1rem;">
+            The entire RQ2 ("Does synthetic data help?") lives on this axis. The breakthrough finding: training on machine-generated data (right end) improves performance when tested on human data (left end). Small open-source models fine-tuned on synthetic data can match or beat GPT-4o.
+          </div>
+
+          <div class="chart-row" style="margin-top: 1.5rem;">
+            <div class="chart-box">
+              <h4>Distribution Mismatch: Question Length</h4>
+              <canvas id="chartAxis1Q"></canvas>
+            </div>
+            <div class="chart-box">
+              <h4>Distribution Mismatch: Answer Length</h4>
+              <canvas id="chartAxis1A"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AXIS 2: COGNITIVE DEMAND -->
+      <div id="axis2" class="tab-content">
+        <div class="card">
+          <h3>🧠 Axis 2: Cognitive Demand — "How hard does the question make you think?"</h3>
+          <div class="axis-visual">
+            <div class="axis-spectrum">
+              <div class="axis-endpoint left">📖 Recall (Knowledge)</div>
+              <div class="axis-line">
+                <div class="marker" style="left: 10%;" data-label="Easy"></div>
+                <div class="marker" style="left: 50%;" data-label="Medium"></div>
+                <div class="marker" style="left: 88%;" data-label="Hard"></div>
+              </div>
+              <div class="axis-endpoint right">⚖️ Judgment (Evaluation)</div>
+            </div>
+          </div>
+
+          <p style="color: var(--text2); margin: 1rem 0;">This axis uses <span class="jargon" data-meaning="A hierarchy of learning objectives created by Benjamin Bloom in 1956. From simplest to most complex: Knowledge → Comprehension → Application → Analysis → Synthesis → Evaluation. Higher levels require deeper thinking.">Bloom's Taxonomy</span> — a well-known framework that classifies questions from simple recall to complex judgment:</p>
+
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th>Difficulty</th>
+                <th>Bloom's Levels</th>
+                <th>Example Question</th>
+                <th>What It Tests</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="tag tag-open">Easy</span></td>
+                <td>Knowledge, Comprehension</td>
+                <td>"What is backpropagation?"</td>
+                <td>Can you recall & explain a concept?</td>
+              </tr>
+              <tr>
+                <td><span class="tag" style="background:rgba(245,158,11,0.15);color:var(--amber);">Medium</span></td>
+                <td>Application, Analysis</td>
+                <td>"Why does gradient descent get stuck in local minima?"</td>
+                <td>Can you apply knowledge & analyze trade-offs?</td>
+              </tr>
+              <tr>
+                <td><span class="tag tag-closed">Hard</span></td>
+                <td>Synthesis, Evaluation</td>
+                <td>"Can you explain why T2 is better despite a larger coefficient?"</td>
+                <td>Can you combine concepts & make judgments?</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="why-box">
+            EduVidQA reaches the <strong>Evaluation</strong> level — the highest tier. Every other educational video QA dataset (TutorialVQA, How2QA, HowToVQA, YTCommentQA) stops at Comprehension or Knowledge. This makes EduVidQA uniquely challenging.
+          </div>
+
+          <div class="chart-box" style="margin-top: 1.5rem; max-width: 500px;">
+            <h4>Difficulty Distribution in Synthetic Set</h4>
+            <canvas id="chartBloom"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- AXIS 3: ANSWER QUALITY -->
+      <div id="axis3" class="tab-content">
+        <div class="card">
+          <h3>📏 Axis 3: Answer Quality Dimension — "What makes an answer 'good'?"</h3>
+          <div class="axis-visual">
+            <div class="axis-spectrum">
+              <div class="axis-endpoint left">✅ Factual Correctness</div>
+              <div class="axis-line">
+                <div class="marker" style="left: 15%;" data-label="BLEU/ROUGE"></div>
+                <div class="marker" style="left: 40%;" data-label="FactQA"></div>
+                <div class="marker" style="left: 65%;" data-label="Clarity"></div>
+                <div class="marker" style="left: 85%;" data-label="ECT/UPT"></div>
+              </div>
+              <div class="axis-endpoint right">🎓 Pedagogical Richness</div>
+            </div>
+          </div>
+
+          <p style="color: var(--text2); margin: 1rem 0;">This is the paper's biggest innovation. Traditional metrics only check: "Are the words similar?" The paper adds: "Is the answer <em>teachable</em>?"</p>
+
+          <h4 style="margin: 1.5rem 0 0.5rem; color: var(--accent2);">📐 Text-Based Metrics (Factual End)</h4>
+          <table class="comp-table">
+            <thead><tr><th>Metric</th><th>What It Measures</th><th>Simple Explanation</th><th>Weakness</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>BLEU</strong></td>
+                <td>Word overlap (n-gram precision)</td>
+                <td>How many words in the generated answer also appear in the reference?</td>
+                <td>Ignores meaning — "dog bites man" = "man bites dog"</td>
+              </tr>
+              <tr>
+                <td><strong>ROUGE-L</strong></td>
+                <td>Longest common subsequence</td>
+                <td>What's the longest sequence of words that appears in both answers?</td>
+                <td>Misses paraphrases and synonyms</td>
+              </tr>
+              <tr>
+                <td><strong>METEOR</strong></td>
+                <td>Synonym-aware word matching</td>
+                <td>Like BLEU but also matches synonyms ("big" ≈ "large")</td>
+                <td>Still surface-level, not semantic</td>
+              </tr>
+              <tr>
+                <td><strong>Entailment Score</strong></td>
+                <td>Semantic entailment probability</td>
+                <td>Does the generated answer logically follow from the reference?</td>
+                <td>Binary — doesn't measure degree</td>
+              </tr>
+              <tr>
+                <td><strong>FactQA-Precision</strong></td>
+                <td>Factual correctness</td>
+                <td>Of all facts in the generated answer, how many are actually correct?</td>
+                <td>Doesn't check pedagogical quality</td>
+              </tr>
+              <tr>
+                <td><strong>FactQA-Recall</strong></td>
+                <td>Factual completeness</td>
+                <td>Of all facts in the reference, how many does the generated answer cover?</td>
+                <td>Doesn't check pedagogical quality</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4 style="margin: 1.5rem 0 0.5rem; color: var(--cyan);">🎓 Qualitative Metrics (Pedagogical End) — THE PAPER'S INNOVATION</h4>
+          <table class="comp-table">
+            <thead><tr><th>Metric</th><th>Likert Scale (1-5)</th><th>What Score 5 Means</th><th>Human Agreement</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong style="color:var(--green);">Clarity</strong></td>
+                <td>1 = jargon-filled, incoherent → 5 = crystal clear</td>
+                <td>No unexplained jargon, logical structure, a beginner would understand</td>
+                <td>Cohen's κ = 0.72 (substantial)</td>
+              </tr>
+              <tr>
+                <td><strong style="color:var(--amber);">ECT</strong></td>
+                <td>1 = purely factual → 5 = deeply thought-provoking</td>
+                <td>Poses follow-up questions, discusses alternatives, encourages critical thinking</td>
+                <td>Cohen's κ = 0.46 (moderate)</td>
+              </tr>
+              <tr>
+                <td><strong style="color:var(--violet);">UPT</strong></td>
+                <td>1 = no examples → 5 = rich examples, analogies, step-by-step</td>
+                <td>Uses teaching techniques: examples, analogies, breakdowns, visualizations</td>
+                <td>Cohen's κ = 0.85 (almost perfect)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="why-box">
+            Students overwhelmingly prefer <strong>Clarity (65%)</strong> over everything else. This is the key insight: a factually perfect answer that's confusing is worse than a slightly less complete answer that's crystal clear.
+          </div>
+
+          <div class="chart-box" style="margin-top: 1.5rem; max-width: 500px;">
+            <h4>Student Quality Preferences (52 students surveyed)</h4>
+            <canvas id="chartPrefs"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- AXIS 4: CONTEXT MODALITY -->
+      <div id="axis4" class="tab-content">
+        <div class="card">
+          <h3>👁️ Axis 4: Context Modality — "What input does the model see?"</h3>
+          <div class="axis-visual">
+            <div class="axis-spectrum">
+              <div class="axis-endpoint left">📝 Text Only (Transcript)</div>
+              <div class="axis-line">
+                <div class="marker" style="left: 30%;" data-label="LVLMs"></div>
+                <div class="marker" style="left: 70%;" data-label="Video LLMs"></div>
+              </div>
+              <div class="axis-endpoint right">🎬 Full Multimodal (Video+Audio+Text)</div>
+            </div>
+          </div>
+
+          <p style="color: var(--text2); margin: 1rem 0;">The model needs context from the video to answer the question. But how <em>much</em> context, and in what <em>form</em>?</p>
+
+          <h4 style="margin: 1rem 0 0.5rem;">Context Window Setup:</h4>
+          <ul style="color: var(--text2); margin-left: 1.5rem; margin-bottom: 1rem;">
+            <li><strong>Transcript:</strong> 4-minute window around the timestamp (2 min before + 2 min after)</li>
+            <li><strong>Video frames:</strong> 14 frames before + 15 frames after the timestamp (for LVLMs — still images)</li>
+            <li><strong>Full video clip:</strong> subsampled at specific FPS (for Video LLMs — temporal sequence)</li>
+          </ul>
+
+          <table class="comp-table">
+            <thead><tr><th>Model Type</th><th>Input Format</th><th>How It Processes Video</th><th>Example Models</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>LVLMs</strong><br><span style="font-size:0.75rem;color:var(--text3);">Large Vision-Language Models</span></td>
+                <td>Individual frames + transcript text</td>
+                <td>Sees each frame as a separate image. No notion of "time" — just a bag of snapshots.</td>
+                <td>GPT-4o, Gemini 1.5, Qwen2-VL, LLaVA-1.5</td>
+              </tr>
+              <tr>
+                <td><strong>Video LLMs</strong><br><span style="font-size:0.75rem;color:var(--text3);">Video Language Models</span></td>
+                <td>Video clip (sequence of frames) + transcript</td>
+                <td>Processes frames as a temporal sequence. Understands that frame N comes after frame N-1.</td>
+                <td>mPLUG-Owl3, Video-LLaVA</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="why-box">
+            44-46% of questions reference visual content (diagrams, slides, code on screen). But the paper doesn't cleanly ablate whether the visual information actually helps — they always provide frames. A text-only vs. multimodal comparison would have been a powerful addition.
+          </div>
+        </div>
+      </div>
+
+      <!-- ORTHOGONALITY TEST -->
+      <div id="orthotest" class="tab-content">
+        <div class="card">
+          <h3>✅ Are These Axes Truly Independent?</h3>
+          <p style="color: var(--text2); margin-bottom: 1rem;">The acid test for orthogonality: "Can I change one axis without affecting the other?" If yes → truly independent.</p>
+
+          <div class="ortho-grid">
+            <div class="ortho-test">
+              <div class="pair">Axis 1 × Axis 2 (Data Origin × Cognitive Demand)</div>
+              <div class="result">Can I change where data comes from without changing question difficulty? <strong>YES</strong> — both real and synthetic sets contain Easy, Medium, and Hard questions.</div>
+              <div class="verdict">✅ ORTHOGONAL</div>
+            </div>
+            <div class="ortho-test">
+              <div class="pair">Axis 1 × Axis 3 (Data Origin × Answer Quality)</div>
+              <div class="result">Can I change data source without affecting how we measure quality? <strong>YES</strong> — both sets can be evaluated on BLEU, Clarity, ECT, UPT independently.</div>
+              <div class="verdict">✅ ORTHOGONAL</div>
+            </div>
+            <div class="ortho-test">
+              <div class="pair">Axis 2 × Axis 3 (Cognitive Demand × Answer Quality)</div>
+              <div class="result">Can I change difficulty without affecting quality dimension? <strong>YES</strong> — Clarity matters at all difficulty levels. ECT/UPT become more relevant at higher levels but are independently measurable.</div>
+              <div class="verdict">✅ ORTHOGONAL</div>
+            </div>
+            <div class="ortho-test">
+              <div class="pair">Axis 4 × All Others</div>
+              <div class="result">Can I change context modality independently? <strong>YES</strong> — you can feed text-only or multimodal input regardless of data source, difficulty, or evaluation metric.</div>
+              <div class="verdict">✅ ORTHOGONAL</div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 1.5rem; padding: 1rem; background: rgba(16,185,129,0.1); border-radius: 12px; border: 1px solid rgba(16,185,129,0.3);">
+            <strong style="color: var(--green); font-size: 1.2rem;">All 4 axes pass the orthogonality test ✅</strong>
+            <p style="color: var(--text2); font-size: 0.85rem; margin-top: 0.3rem;">Each axis captures unique, non-overlapping information about the paper's design space.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- COORDINATE SWAP TRAPS -->
+      <div id="traps" class="tab-content">
+        <div class="card">
+          <h3>⚠️ Coordinate Swap Traps — Common Misconceptions</h3>
+          <p style="color: var(--text2); margin-bottom: 1rem;">Using the orthogonal framework, we can identify exactly <em>which axis</em> gets swapped in common misconceptions about this paper:</p>
+
+          <div class="trap-card">
+            <div class="trap-stmt">❌ "EduVidQA is a tutorial-based QA dataset requiring Comprehension-level reasoning."</div>
+            <div class="trap-analysis">
+              <span class="maintained">✅ MAINTAINED:</span> General domain (educational video QA)<br>
+              <span class="swapped">❌ SWAPPED on Axis 2:</span> Comprehension → should be <strong>Evaluation</strong> (highest Bloom's level)<br>
+              <span class="swapped">❌ SWAPPED on context:</span> Tutorial → should be <strong>Lecture</strong> videos<br>
+              <em style="color: var(--text3);">This is exactly how prior datasets (TutorialVQA, How2QA) differ from EduVidQA.</em>
+            </div>
+          </div>
+
+          <div class="trap-card">
+            <div class="trap-stmt">❌ "Fine-tuning on synthetic data HURTS qualitative metrics while improving text-based metrics."</div>
+            <div class="trap-analysis">
+              <span class="maintained">✅ MAINTAINED:</span> Fine-tuning does improve text-based metrics (true)<br>
+              <span class="swapped">❌ SWAPPED on Axis 3:</span> Table 5 shows fine-tuning improves <strong>BOTH</strong> text-based AND qualitative metrics across the board. There's no trade-off — the statement fabricates one.<br>
+            </div>
+          </div>
+
+          <div class="trap-card">
+            <div class="trap-stmt">❌ "GPT-4o achieves the best performance across ALL metrics."</div>
+            <div class="trap-analysis">
+              <span class="maintained">✅ MAINTAINED:</span> GPT-4o has highest raw Clarity (4.16) and best FactQA-Precision (64.49)<br>
+              <span class="swapped">❌ SWAPPED:</span> Fine-tuned mPLUG-Owl3 has the <strong>LOWEST</strong> Clarity Absolute Difference (0.30 vs GPT-4o's 0.57). Fine-tuned LLaVA-13B has highest ECT/UPT correlation. "Best" depends on <em>which</em> quality axis you measure on Axis 3.<br>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MODEL BENCHMARKS ===== -->
+<section id="models">
+  <div class="container">
+    <div class="animate-on-scroll">
+      <div class="section-label">Benchmarking</div>
+      <div class="section-title">6 AI Models Tested</div>
+      <div class="section-subtitle">
+        The paper tested 2 closed-source giants and 4 open-source models. Each model gets the student question + video frames + transcript and must generate an answer.
+      </div>
+    </div>
+
+    <table class="comp-table animate-on-scroll">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Size</th>
+          <th>Type</th>
+          <th>Architecture</th>
+          <th>Access</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--accent2);">GPT-4o</strong></td>
+          <td>Unknown</td>
+          <td>LVLM</td>
+          <td>OpenAI's multimodal model. Understands images + text.</td>
+          <td><span class="tag tag-closed">Closed API</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--accent2);">Gemini 1.5</strong></td>
+          <td>Unknown</td>
+          <td>LVLM</td>
+          <td>Google's multimodal model. Long context window (1M tokens).</td>
+          <td><span class="tag tag-closed">Closed API</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--green);">mPLUG-Owl3</strong></td>
+          <td>8B</td>
+          <td>Video LLM</td>
+          <td>Hyper-attention blocks for video-text integration. SigLIP encoder + Qwen2 decoder.</td>
+          <td><span class="tag tag-open">Open Source</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--green);">Video-LLaVA</strong></td>
+          <td>7B</td>
+          <td>Video LLM</td>
+          <td>LanguageBind encoders + Vicuna decoder. Processes video as temporal sequence.</td>
+          <td><span class="tag tag-open">Open Source</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--green);">Qwen2-VL</strong></td>
+          <td>7B</td>
+          <td>LVLM</td>
+          <td>675M param ViT encoder + Qwen2 LLM decoder. Strong image understanding.</td>
+          <td><span class="tag tag-open">Open Source</span></td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--green);">LLaVA-1.5</strong></td>
+          <td>13B</td>
+          <td>LVLM</td>
+          <td>ViT-Large encoder + Vicuna 13B decoder. The largest open model tested.</td>
+          <td><span class="tag tag-open">Open Source</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card animate-on-scroll">
+      <h3>⚙️ Training Setup</h3>
+      <p style="color: var(--text2);">Open-source models were fine-tuned on the synthetic training set using <span class="jargon" data-meaning="Low-Rank Adaptation — an efficient fine-tuning technique. Instead of updating ALL model parameters (billions), LoRA only updates small 'adapter' matrices, cutting memory usage by 90%+. Like adding a thin layer of paint instead of replacing the whole canvas.">LoRA</span> (rank 64):</p>
+      <ul style="color: var(--text2); margin: 1rem 0 0 1.5rem;">
+        <li><strong>Precision:</strong> bfloat16 (half-precision to save GPU memory)</li>
+        <li><strong>Max output tokens:</strong> 256 (a significant limitation — answers get cut off)</li>
+        <li><strong>Epochs:</strong> 10 with early stopping</li>
+        <li><strong>Hardware:</strong> 2 × NVIDIA L40 GPUs</li>
+        <li><strong>Learning rate:</strong> 2e-5 (LLaVA), 1e-5 (others)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== RESULTS ===== -->
+<section id="results" style="background: var(--bg2);">
+  <div class="container">
+    <div class="animate-on-scroll">
+      <div class="section-label">Key Findings</div>
+      <div class="section-title">What Did They Discover?</div>
+      <div class="section-subtitle">5 major findings that change how we think about AI teaching assistants.</div>
+    </div>
+
+    <div class="card animate-on-scroll">
+      <h3>1️⃣ The Task is GENUINELY Hard</h3>
+      <p style="color: var(--text2);">Even GPT-4o — the most powerful model tested — only achieves ~65% FactQA-Precision and ~26% FactQA-Recall on real-world questions. BLEU scores are universally low (12-33). No model "solves" this task.</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <h3>2️⃣ Synthetic Fine-Tuning WORKS (The Big Win)</h3>
+      <p style="color: var(--text2);">All fine-tuned open-source models improve across ALL metrics. An 8B model trained on GPT-4o-generated data can match the 100x-more-expensive GPT-4o itself. This is the paper's most impactful finding.</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <h3>3️⃣ Clarity is King</h3>
+      <p style="color: var(--text2);">~65% of students chose Clarity as their #1 priority. A clear but incomplete answer beats a complete but confusing one. Fine-tuned mPLUG-Owl3 achieves the closest Clarity to ground truth (Abs. Diff = 0.30), better than GPT-4o (0.57).</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <h3>4️⃣ Hard Questions → Better Performance (Counterintuitive!)</h3>
+      <p style="color: var(--text2);">Models perform BETTER on Hard (Evaluation-level) questions than Medium (Application/Analysis) questions. Medium questions are the tricky middle ground where models struggle the most.</p>
+    </div>
+    <div class="card animate-on-scroll">
+      <h3>5️⃣ No Model Teaches Well (ECT/UPT scores are low)</h3>
+      <p style="color: var(--text2);">ECT and UPT scores range 1.0-1.9 out of 5. No model naturally encourages critical thinking or uses pedagogical techniques. This is the biggest area for improvement — future models need to not just answer, but <em>teach</em>.</p>
+    </div>
+
+    <div class="chart-row animate-on-scroll">
+      <div class="chart-box">
+        <h4>📊 FactQA-Precision: Real-World Test Set</h4>
+        <canvas id="chartFQA"></canvas>
+      </div>
+      <div class="chart-box">
+        <h4>📊 Clarity Scores: All Models</h4>
+        <canvas id="chartClarity"></canvas>
+      </div>
+    </div>
+
+    <div class="animate-on-scroll">
+      <h3 style="margin-bottom: 1rem;">📊 Model-to-Axis Coordinates (Synthesis Table)</h3>
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Data Origin (Axis 1)</th>
+            <th>Best Cognitive Level (Axis 2)</th>
+            <th>Quality Strength (Axis 3)</th>
+            <th>Modality (Axis 4)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>GPT-4o (0-shot)</strong></td>
+            <td>None (closed)</td>
+            <td>All (general)</td>
+            <td class="highlight">Highest Clarity (4.16), Best FQA-P (64.49)</td>
+            <td>Frames + Transcript</td>
+          </tr>
+          <tr>
+            <td><strong>Gemini 1.5 (0-shot)</strong></td>
+            <td>None (closed)</td>
+            <td>All (general)</td>
+            <td>High FQA-P (63.27)</td>
+            <td>Frames + Transcript</td>
+          </tr>
+          <tr>
+            <td><strong>mPLUG-Owl3 (SFT)</strong></td>
+            <td>Synthetic</td>
+            <td>Medium (best)</td>
+            <td class="highlight">Best Clarity Match (AD 0.30)</td>
+            <td>Video (30 frames) + Transcript</td>
+          </tr>
+          <tr>
+            <td><strong>LLaVA-13B (SFT)</strong></td>
+            <td>Synthetic</td>
+            <td>All</td>
+            <td class="highlight">Best ECT ρ (0.24), Best UPT ρ (0.25)</td>
+            <td>Frames + Transcript</td>
+          </tr>
+          <tr>
+            <td><strong>Qwen2-VL (SFT)</strong></td>
+            <td>Synthetic</td>
+            <td>All</td>
+            <td>High FQA-P (60.83)</td>
+            <td>Frames + Transcript</td>
+          </tr>
+          <tr>
+            <td><strong>Video-LLaVA (SFT)</strong></td>
+            <td>Synthetic</td>
+            <td>Medium/Hard</td>
+            <td class="warn">Lowest across board</td>
+            <td>Video + Transcript</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== IMPROVEMENTS ===== -->
+<section id="improvements">
+  <div class="container">
+    <div class="animate-on-scroll">
+      <div class="section-label">What Could Be Better</div>
+      <div class="section-title">Paper Limitations + Our Suggestions (2026)</div>
+      <div class="section-subtitle">
+        The paper was submitted in 2024. Since then, the AI landscape has evolved dramatically. Here's what we'd change today.
+      </div>
+    </div>
+
+    <h3 class="animate-on-scroll" style="margin-bottom: 1.5rem; color: var(--rose);">📋 Paper's Own Limitations</h3>
+    <div class="stats-grid animate-on-scroll">
+      <div class="stat-card" style="text-align:left;">
+        <div style="color:var(--rose);font-weight:700;font-size:0.8rem;">LIMITATION 1</div>
+        <div style="font-weight:600;margin:0.3rem 0;">Small Real-World Set</div>
+        <div style="color:var(--text2);font-size:0.85rem;">Only 270 real QA pairs from 7 CS courses. Too small for statistical power.</div>
+      </div>
+      <div class="stat-card" style="text-align:left;">
+        <div style="color:var(--rose);font-weight:700;font-size:0.8rem;">LIMITATION 2</div>
+        <div style="font-weight:600;margin:0.3rem 0;">CS-Only Domain</div>
+        <div style="color:var(--text2);font-size:0.85rem;">Can't generalize to humanities, medicine, law, or other fields.</div>
+      </div>
+      <div class="stat-card" style="text-align:left;">
+        <div style="color:var(--rose);font-weight:700;font-size:0.8rem;">LIMITATION 3</div>
+        <div style="font-weight:600;margin:0.3rem 0;">GPT-4o Circular Bias</div>
+        <div style="color:var(--text2);font-size:0.85rem;">GPT-4o generates synthetic data AND evaluates model outputs. Judge and contestant are the same.</div>
+      </div>
+      <div class="stat-card" style="text-align:left;">
+        <div style="color:var(--rose);font-weight:700;font-size:0.8rem;">LIMITATION 4</div>
+        <div style="font-weight:600;margin:0.3rem 0;">No RAG Baseline</div>
+        <div style="color:var(--text2);font-size:0.85rem;">No retrieval-augmented generation tested — the most obvious practical approach.</div>
+      </div>
+      <div class="stat-card" style="text-align:left;">
+        <div style="color:var(--rose);font-weight:700;font-size:0.8rem;">LIMITATION 5</div>
+        <div style="font-weight:600;margin:0.3rem 0;">256 Token Cap</div>
+        <div style="color:var(--text2);font-size:0.85rem;">Answers get truncated at ~200 words. Modern models can generate 8K-32K tokens.</div>
+      </div>
+      <div class="stat-card" style="text-align:left;">
+        <div style="color:var(--rose);font-weight:700;font-size:0.8rem;">LIMITATION 6</div>
+        <div style="font-weight:600;margin:0.3rem 0;">No Visual Ablation</div>
+        <div style="color:var(--text2);font-size:0.85rem;">44-46% have visual refs but no text-only vs multimodal comparison done.</div>
+      </div>
+    </div>
+
+    <h3 class="animate-on-scroll" style="margin: 3rem 0 1.5rem; color: var(--green);">🚀 Our Suggestions: Better Models & Methods (2025-2026)</h3>
+    <div class="improve-grid animate-on-scroll">
+      <div class="improve-card">
+        <div class="old-tag">📦 Paper Used (2024)</div>
+        <h4>Qwen2-VL 7B</h4>
+        <p>Basic vision-language model. 7B parameters. Limited video understanding.</p>
+        <div class="arrow">⬇️</div>
+        <div class="new-tag">🚀 Upgrade To (2025-26)</div>
+        <h4 style="color:var(--green);">Qwen2.5-VL 72B</h4>
+        <p>Hour-long video understanding, dynamic FPS training, absolute time encoding. Beats GPT-4o on many benchmarks. 3B/7B/72B sizes available, all open-source.</p>
+      </div>
+
+      <div class="improve-card">
+        <div class="old-tag">📦 Paper Used (2024)</div>
+        <h4>GPT-4o (Closed, Expensive API)</h4>
+        <p>Best performer but costs money per query. Not deployable at scale for students.</p>
+        <div class="arrow">⬇️</div>
+        <div class="new-tag">🚀 Upgrade To (2025-26)</div>
+        <h4 style="color:var(--green);">Gemini 2.5 Pro / Flash</h4>
+        <p>1M+ token context, native video understanding, significantly cheaper. Gemini 2.5 Flash offers near-Pro quality at 10x lower cost.</p>
+      </div>
+
+      <div class="improve-card">
+        <div class="old-tag">📦 Paper Used (2024)</div>
+        <h4>mPLUG-Owl3 8B</h4>
+        <p>Best open model on clarity, but small and limited in long video understanding.</p>
+        <div class="arrow">⬇️</div>
+        <div class="new-tag">🚀 Upgrade To (2025-26)</div>
+        <h4 style="color:var(--green);">InternVL3 / LLaVA-OneVision</h4>
+        <p>InternVL3 has superior video reasoning, multi-image support. LLaVA-OneVision unifies image + video in a single model with much stronger performance.</p>
+      </div>
+
+      <div class="improve-card">
+        <div class="old-tag">📦 Paper's Gap</div>
+        <h4>No RAG Pipeline</h4>
+        <p>Fixed 4-minute context window around timestamp. Misses relevant content from earlier/later in the lecture.</p>
+        <div class="arrow">⬇️</div>
+        <div class="new-tag">🚀 Add New</div>
+        <h4 style="color:var(--green);">Gemini Embedding 2 + RAG</h4>
+        <p>Google's first natively multimodal embedding model (March 2026). Embeds text + images + video + audio into ONE vector space. Build a RAG pipeline: embed all lecture segments → retrieve most relevant for any question → feed to MLLM.</p>
+      </div>
+
+      <div class="improve-card">
+        <div class="old-tag">📦 Paper's Gap</div>
+        <h4>256 Token Output Limit</h4>
+        <p>Answers cut off after ~200 words. Complex explanations need more space.</p>
+        <div class="arrow">⬇️</div>
+        <div class="new-tag">🚀 Upgrade To</div>
+        <h4 style="color:var(--green);">8K-32K Token Generation</h4>
+        <p>Modern models (Qwen2.5, Gemini 2.5) can generate much longer outputs. Set max_tokens to 4096+ for comprehensive educational answers with examples and analogies.</p>
+      </div>
+
+      <div class="improve-card">
+        <div class="old-tag">📦 Paper's Gap</div>
+        <h4>CS-Only Domain</h4>
+        <p>Only Computer Science lectures. Can't say anything about biology, history, math, etc.</p>
+        <div class="arrow">⬇️</div>
+        <div class="new-tag">🚀 Extend To</div>
+        <h4 style="color:var(--green);">Multi-Domain + Personalization</h4>
+        <p>Extend to STEM broadly, then humanities. Add student expertise detection: undergrads get depth, grads get conciseness (the paper's own finding from the student study!).</p>
+      </div>
+    </div>
+
+    <div class="card animate-on-scroll" style="margin-top: 2rem; border-color: rgba(6,182,212,0.3);">
+      <h3 style="color: var(--cyan);">🔮 The Dream Pipeline (If We Were Building This Today)</h3>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-num">Step 1 — Ingest</div>
+          <div class="step-title">Process Full Lecture Video</div>
+          <div class="step-desc">Use Qwen2.5-VL or Gemini 2.5 to extract transcript + key frames + slide content from the entire lecture (not just 4 minutes).</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 2 — Index</div>
+          <div class="step-title">Build Multimodal Vector Index</div>
+          <div class="step-desc">Use <strong>Gemini Embedding 2</strong> to embed every 2-minute segment (transcript + frames + slides) into a unified vector space. Store in a vector DB (ChromaDB, Qdrant).</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 3 — Retrieve</div>
+          <div class="step-title">RAG — Retrieve Relevant Segments</div>
+          <div class="step-desc">Student asks a question → embed it → find top-5 most semantically relevant video segments → retrieve their transcript + frames.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 4 — Generate</div>
+          <div class="step-title">Answer with Strong MLLM</div>
+          <div class="step-desc">Feed retrieved context + question to Gemini 2.5 Pro or Qwen2.5-VL 72B. Max tokens = 4096. System prompt emphasizes Clarity + pedagogical techniques.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">Step 5 — Evaluate</div>
+          <div class="step-title">Quality Check</div>
+          <div class="step-desc">Score the answer on Clarity/ECT/UPT using the paper's Likert scale approach. If Clarity < 3, regenerate with a "simplify" prompt.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== GLOSSARY ===== -->
+<section id="glossary" style="background: var(--bg2);">
+  <div class="container">
+    <div class="animate-on-scroll">
+      <div class="section-label">Jargon Buster</div>
+      <div class="section-title">Every Technical Term Explained</div>
+      <div class="section-subtitle">Hover over highlighted terms anywhere on the page for quick definitions. Here's the full glossary:</div>
+    </div>
+
+    <div class="glossary-grid animate-on-scroll">
+      <div class="glossary-item"><div class="term">MLLM (Multimodal Large Language Model)</div><div class="def">An AI model that understands BOTH text AND images/video. Like ChatGPT but it can also "see" pictures. Examples: GPT-4o, Gemini.</div></div>
+      <div class="glossary-item"><div class="term">LVLM (Large Vision-Language Model)</div><div class="def">A model that processes individual images + text. It sees each video frame as a separate photo — no concept of "time" between frames.</div></div>
+      <div class="glossary-item"><div class="term">Video LLM</div><div class="def">A model designed specifically for video. It understands that frames form a sequence in time — frame 1 comes before frame 2.</div></div>
+      <div class="glossary-item"><div class="term">Fine-tuning (SFT)</div><div class="def">Taking a pre-trained AI model and training it further on your specific data. Like hiring a chef (pre-trained) and teaching them YOUR recipes (fine-tuning).</div></div>
+      <div class="glossary-item"><div class="term">Zero-shot</div><div class="def">Using a model without any extra training — straight out of the box. "Zero" examples shown before testing.</div></div>
+      <div class="glossary-item"><div class="term">LoRA (Low-Rank Adaptation)</div><div class="def">An efficient fine-tuning trick. Instead of updating all billions of parameters, LoRA adds small "adapter" layers. Saves 90%+ memory. Like adding a thin customize layer on top.</div></div>
+      <div class="glossary-item"><div class="term">BLEU Score</div><div class="def">Measures how many words in the AI's answer also appear in the expert's answer. Higher = more word overlap. Simple but crude — ignores meaning entirely.</div></div>
+      <div class="glossary-item"><div class="term">ROUGE-L</div><div class="def">Finds the longest sequence of words that appears in both the AI's answer and the expert's answer. Better than BLEU but still surface-level.</div></div>
+      <div class="glossary-item"><div class="term">METEOR</div><div class="def">Like BLEU but smarter — also counts synonyms ("big" matches "large"). Still not truly semantic though.</div></div>
+      <div class="glossary-item"><div class="term">Entailment Score</div><div class="def">Does the AI's answer logically follow from the expert's answer? It's a semantic check — "does this make sense given the reference?"</div></div>
+      <div class="glossary-item"><div class="term">FactQA-Precision</div><div class="def">Of all the facts the AI stated, what percentage are actually correct? High precision = fewer wrong facts.</div></div>
+      <div class="glossary-item"><div class="term">FactQA-Recall</div><div class="def">Of all the facts the expert mentioned, what percentage did the AI also mention? High recall = more complete answers.</div></div>
+      <div class="glossary-item"><div class="term">Likert Scale</div><div class="def">A rating scale from 1 to 5 (strongly disagree to strongly agree). Used here to rate Clarity, ECT, and UPT of answers.</div></div>
+      <div class="glossary-item"><div class="term">Bloom's Taxonomy</div><div class="def">A hierarchy of thinking skills: Knowledge → Comprehension → Application → Analysis → Synthesis → Evaluation. Higher = harder. EduVidQA reaches Evaluation — the top.</div></div>
+      <div class="glossary-item"><div class="term">ECT (Encouraging Critical Thinking)</div><div class="def">Does the answer make you THINK more? Does it pose follow-up questions, discuss alternatives, or challenge assumptions?</div></div>
+      <div class="glossary-item"><div class="term">UPT (Uses Pedagogical Techniques)</div><div class="def">Does the answer use teaching techniques? Examples, analogies, step-by-step breakdowns, visual descriptions — like a good teacher would.</div></div>
+      <div class="glossary-item"><div class="term">Clarity</div><div class="def">Is the answer clear? No unexplained jargon, logical flow, a beginner could follow. Students rated this as their #1 priority (65%).</div></div>
+      <div class="glossary-item"><div class="term">Spearman's ρ (rho)</div><div class="def">A correlation measure: do two sets of rankings agree? If model scores match human scores in order, ρ is high (close to 1). Used for ECT/UPT.</div></div>
+      <div class="glossary-item"><div class="term">Cohen's Kappa (κ)</div><div class="def">How much do two human annotators agree, beyond what random chance would predict? 0.4-0.6 = moderate, 0.6-0.8 = substantial, 0.8-1.0 = near-perfect.</div></div>
+      <div class="glossary-item"><div class="term">RAG (Retrieval-Augmented Generation)</div><div class="def">Instead of relying on the model's memory, FIRST search a database for relevant information, THEN feed that context to the model. Like an open-book exam vs. a closed-book exam.</div></div>
+      <div class="glossary-item"><div class="term">Adversarial Refinement</div><div class="def">A quality filter: try to answer the question WITHOUT the video context. If you can, the question is too easy and gets removed. Only keeps questions that genuinely need the video.</div></div>
+      <div class="glossary-item"><div class="term">Embedding</div><div class="def">Converting text/image/video into a list of numbers (a vector). Similar content gets similar numbers. This lets you "search by meaning" instead of by exact words.</div></div>
+      <div class="glossary-item"><div class="term">NPTEL</div><div class="def">National Programme on Technology Enhanced Learning — free online courses from IITs and IIScs in India. High-quality transcripts with timestamps and key frames.</div></div>
+      <div class="glossary-item"><div class="term">Gemini Embedding 2</div><div class="def">Google's first natively multimodal embedding model (March 2026). Maps text, images, video, audio, and PDFs into a single vector space. Enables searching across media types.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="container">
+    <p style="margin-bottom: 0.5rem;">📚 <strong>EduVidQA Paper Explained</strong> — An interactive breakdown of the EMNLP 2025 paper</p>
+    <p>Original paper by Sourjyadip Ray, Shubham Sharma, Somak Aditya & Pawan Goyal (IIT Kharagpur & Panjab University)</p>
+    <p style="margin-top: 0.5rem; color: var(--text3);">
+      <a href="https://github.com/sourjyadip/eduvidqa-emnlp25" target="_blank">GitHub Repo</a> ·
+      Orthogonal Framework Analysis · Built March 2026
+    </p>
+  </div>
+</footer>
+
+<!-- ===== MOBILE BOTTOM NAV ===== -->
+<nav class="mobile-nav">
+  <a href="#problem"><span class="nav-icon">❓</span>Problem</a>
+  <a href="#dataset"><span class="nav-icon">📊</span>Data</a>
+  <a href="#axes"><span class="nav-icon">🧭</span>Axes</a>
+  <a href="#results"><span class="nav-icon">📈</span>Results</a>
+  <a href="#improvements"><span class="nav-icon">🚀</span>Next</a>
+  <a href="#glossary"><span class="nav-icon">📖</span>Terms</a>
+</nav>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// ===== TAB SWITCHING =====
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== ANIMATE ON SCROLL =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+// ===== COUNTER ANIMATION =====
+function animateCounter(elementId, target, suffix = '%') {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  let current = 0;
+  const step = target / 60;
+  const interval = setInterval(() => {
+    current += step;
+    if (current >= target) {
+      current = target;
+      clearInterval(interval);
+    }
+    el.textContent = Math.round(current) + suffix;
+  }, 25);
+}
+
+const statsObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      animateCounter('stat1', 67.9);
+      animateCounter('stat2', 17);
+      animateCounter('stat3', 75);
+      animateCounter('stat4', 35);
+      statsObserver.disconnect();
+    }
+  });
+}, { threshold: 0.3 });
+const statsGrid = document.querySelector('.stats-grid');
+if (statsGrid) statsObserver.observe(statsGrid);
+
+// ===== CHART DEFAULTS =====
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+// ===== CHART: YouTube Usage =====
+new Chart(document.getElementById('chartUsage'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Daily', 'Weekly', 'Before Tests/Exams', 'Rarely', 'Never'],
+    datasets: [{
+      data: [28, 28, 25, 14, 5],
+      backgroundColor: ['#6366f1', '#818cf8', '#06b6d4', '#f59e0b', '#64748b'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true } }
+    }
+  }
+});
+
+// ===== CHART: Why Not Ask =====
+new Chart(document.getElementById('chartReasons'), {
+  type: 'bar',
+  data: {
+    labels: ['Prefer to search\nelsewhere', 'Experts don\'t\nanswer', 'Nobody\nanswers', 'Other\nreasons'],
+    datasets: [{
+      label: '% of students',
+      data: [75, 38, 33, 18],
+      backgroundColor: ['#f43f5e', '#f97316', '#f59e0b', '#64748b'],
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { x: { grid: { display: false } } }
+  }
+});
+
+// ===== CHART: Length Comparison =====
+new Chart(document.getElementById('chartLengths'), {
+  type: 'bar',
+  data: {
+    labels: ['Avg Words/Question', 'Avg Words/Answer', 'Avg Video Length (sec ÷ 10)'],
+    datasets: [
+      {
+        label: 'Real-World',
+        data: [22, 44.6, 405],
+        backgroundColor: '#6366f1',
+        borderRadius: 6,
+      },
+      {
+        label: 'Synthetic',
+        data: [37.1, 122.7, 130],
+        backgroundColor: '#06b6d4',
+        borderRadius: 6,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
+    scales: { y: { grid: { color: 'rgba(255,255,255,0.04)' } } }
+  }
+});
+
+// ===== CHART: Dataset Comparison =====
+new Chart(document.getElementById('chartDatasets'), {
+  type: 'bar',
+  data: {
+    labels: ['How2QA\n(17s)', 'HowToVQA\n(12s)', 'YTCommentQA\n(524s)', 'TutorialVQA\n(1488s)', 'EduVidQA\n(4054s)'],
+    datasets: [{
+      label: 'Avg Video Length (seconds)',
+      data: [17.45, 12.1, 524, 1488, 4054],
+      backgroundColor: ['#64748b', '#64748b', '#64748b', '#64748b', '#6366f1'],
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { grid: { color: 'rgba(255,255,255,0.04)' } } }
+  }
+});
+
+// ===== CHART: Axis 1 Question Length =====
+new Chart(document.getElementById('chartAxis1Q'), {
+  type: 'bar',
+  data: {
+    labels: ['Real-World', 'Synthetic'],
+    datasets: [{
+      label: 'Avg Words per Question',
+      data: [22.01, 37.12],
+      backgroundColor: ['#6366f1', '#06b6d4'],
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' } } }
+  }
+});
+
+// ===== CHART: Axis 1 Answer Length =====
+new Chart(document.getElementById('chartAxis1A'), {
+  type: 'bar',
+  data: {
+    labels: ['Real-World', 'Synthetic'],
+    datasets: [{
+      label: 'Avg Words per Answer',
+      data: [44.57, 122.71],
+      backgroundColor: ['#6366f1', '#06b6d4'],
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.04)' } } }
+  }
+});
+
+// ===== CHART: Bloom's Distribution =====
+new Chart(document.getElementById('chartBloom'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Easy (Knowledge, Comprehension)', 'Medium (Application, Analysis)', 'Hard (Synthesis, Evaluation)'],
+    datasets: [{
+      data: [25, 60.5, 14.5],
+      backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true } } }
+  }
+});
+
+// ===== CHART: Student Preferences =====
+new Chart(document.getElementById('chartPrefs'), {
+  type: 'radar',
+  data: {
+    labels: ['Clarity', 'Depth', 'Conciseness', 'ECT', 'UPT'],
+    datasets: [{
+      label: 'Preference %',
+      data: [65, 40, 40, 22, 22],
+      backgroundColor: 'rgba(99,102,241,0.2)',
+      borderColor: '#6366f1',
+      borderWidth: 2,
+      pointBackgroundColor: '#6366f1',
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 80,
+        grid: { color: 'rgba(255,255,255,0.06)' },
+        angleLines: { color: 'rgba(255,255,255,0.06)' },
+        ticks: { display: false },
+      }
+    },
+    plugins: { legend: { display: false } }
+  }
+});
+
+// ===== CHART: FactQA Precision =====
+new Chart(document.getElementById('chartFQA'), {
+  type: 'bar',
+  data: {
+    labels: ['GPT-4o\n(0-shot)', 'Gemini 1.5\n(0-shot)', 'mPLUG-Owl3\n(SFT)', 'LLaVA-13B\n(SFT)', 'Qwen2-VL\n(SFT)', 'Video-LLaVA\n(SFT)'],
+    datasets: [{
+      label: 'FactQA-Precision (%)',
+      data: [64.49, 63.27, 56.2, 61.35, 60.83, 42.1],
+      backgroundColor: ['#f43f5e', '#f43f5e', '#10b981', '#10b981', '#10b981', '#10b981'],
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, max: 80, grid: { color: 'rgba(255,255,255,0.04)' } },
+      x: { ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ===== CHART: Clarity =====
+new Chart(document.getElementById('chartClarity'), {
+  type: 'bar',
+  data: {
+    labels: ['Ground\nTruth', 'GPT-4o', 'Gemini\n1.5', 'mPLUG\n(SFT)', 'LLaVA\n(SFT)', 'Qwen2\n(SFT)', 'VideoLLaVA\n(SFT)'],
+    datasets: [
+      {
+        label: 'Clarity Score (1-5)',
+        data: [3.59, 4.16, 3.85, 3.88, 3.41, 3.65, 2.95],
+        backgroundColor: ['#64748b', '#f43f5e', '#f43f5e', '#10b981', '#10b981', '#10b981', '#10b981'],
+        borderRadius: 8,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      annotation: {}
+    },
+    scales: {
+      y: { beginAtZero: true, max: 5, grid: { color: 'rgba(255,255,255,0.04)' } },
+      x: { ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ===== NAV ACTIVE STATE =====
+window.addEventListener('scroll', () => {
+  const sections = document.querySelectorAll('section[id]');
+  const scrollY = window.scrollY + 100;
+  sections.forEach(section => {
+    const top = section.offsetTop;
+    const height = section.offsetHeight;
+    const id = section.getAttribute('id');
+    // Desktop nav
+    const link = document.querySelector(`.nav-links a[href="#${id}"]`);
+    if (link) {
+      if (scrollY >= top && scrollY < top + height) { link.classList.add('active'); }
+      else { link.classList.remove('active'); }
+    }
+    // Mobile bottom nav
+    const mLink = document.querySelector(`.mobile-nav a[href="#${id}"]`);
+    if (mLink) {
+      if (scrollY >= top && scrollY < top + height) { mLink.classList.add('active'); }
+      else { mLink.classList.remove('active'); }
+    }
+  });
+});
+</script>
+</body>
+</html>
